@@ -14,11 +14,15 @@ We will put the whole logic into `assets/src/room.ts`. Methods responsible for h
  We have basically imported all the methods defined in `room_ui.ts`. For more details on how these methods work and what is their interface please refer to the source file.
  Take a look at our `assets/package.json` file which defines outer dependencies for our project. We have put there the following dependency:
  ```JSON
- "membrane_rtc_engine": "file:../deps/membrane_rtc_engine/"
+ "dependencies": {
+   "membrane_rtc_engine": "file:../deps/membrane_rtc_engine/",
+   ...
+ }
  ```
  which is a client library provided by the RTC engine plugin from the Membrane Framework.
  Let's import some constructs from this library (their name should be self-explanatory and you can read about them in [the official Membrane's RTC engine documentation](https://hexdocs.pm/membrane_rtc_engine/js/index.html) along with some other dependencies which we will need later:
  ```ts
+ import {MEDIA_CONSTRAINTS, LOCAL_PEER_ID} from './consts';
  import {
     MembraneWebRTC,
     Peer,
@@ -32,11 +36,20 @@ We will put the whole logic into `assets/src/room.ts`. Methods responsible for h
  Once we are ready with the imports, it might be worth to somehow wrap our room's client logic into a class - so at the very beginning let's simply define `Room` class:
  ```ts
  export class Room {
+
+    private socket;
+    private webrtcSocketRefs: string[] = [];
+    private webrtcChannel;
+    private displayName: String;
+    private webrtc: MembraneWebRTC;
+    private peers: Peer[] = [];
+    private localStream: MediaStream | undefined;
+
     constructor(){
     
     }
     
-    public init = async () => {
+    private init = async () => {
     
     };
 
@@ -58,12 +71,8 @@ We will put the whole logic into `assets/src/room.ts`. Methods responsible for h
  //no worries, we will put something into these functions :) 
  }
  ```
- Let's start with a bunch of member fields and the constructor that will initialize them::
+ Let's start with the constructor that will initialize the member fields:
  ```ts
- private socket;
- private webrtcSocketRefs: string[] = [];
- private webrtcChannel;
-
  constructor(){   
    this.socket = new Socket("/socket");
    this.socket.connect();
@@ -71,7 +80,7 @@ We will put the whole logic into `assets/src/room.ts`. Methods responsible for h
    this.displayName = displayName as string;
    window.history.replaceState(null, "", window.location.pathname);
    this.webrtcChannel = this.socket.channel(`room:${getRoomId()}`);
- ...
+   ...
  }
  ``` 
 
@@ -80,10 +89,14 @@ We will put the whole logic into `assets/src/room.ts`. Methods responsible for h
  Then we are connecting to the Phoenix's channel on the topic `room:<room name>`. The room name is fetched from the UI. 
  Following on the constructor implementation:
  ```ts
- const socketErrorCallbackRef = this.socket.onError(this.leave);
- const socketClosedCallbackRef = this.socket.onClose(this.leave);
- this.webrtcSocketRefs.push(socketErrorCallbackRef);
- this.webrtcSocketRefs.push(socketClosedCallbackRef);
+ constructor(){  
+   ...
+   const socketErrorCallbackRef = this.socket.onError(this.leave);
+   const socketClosedCallbackRef = this.socket.onClose(this.leave);
+   this.webrtcSocketRefs.push(socketErrorCallbackRef);
+   this.webrtcSocketRefs.push(socketClosedCallbackRef);
+   ...
+ }
  ```
  This structure might look a little bit ambiguous. What we are storing in ```this.webrtcSocketRefs```? Well, we are storing references...to the callbacks we have just defined.
  We have passed what method should be invoked in case our Phoenix socket is closed or has experienced an error of some type - that is, `this.leave()` method. We will define this method later.
@@ -91,14 +104,13 @@ We will put the whole logic into `assets/src/room.ts`. Methods responsible for h
  Where will we be unregistering the callbacks? Inside `this.leave()` method!
  
 
- Now let's get back to the constructor. Let's create a MembraneWebRTC object! Declare it as a Room class member field:
+ Now let's get back to the constructor. Let's initialize a MembraneWebRTC object! 
  ```ts
- private webrtc: MembraneWebRTC
- ```
-
- and initialize it within constructor:
- ```ts
- this.webrtc = new MembraneWebRTC({callbacks: callbacks});
+ constructor(){
+   ...  
+   this.webrtc = new MembraneWebRTC({callbacks: callbacks});
+   ...
+ }
  ```
  
  According to MembraneWebRTC [documentation](https://hexdocs.pm/membrane_rtc_engine/js/interfaces/callbacks.html) we need to specify the behavior of the RTC engine client by the mean of passing the proper callbacks during the construction. 
@@ -124,13 +136,8 @@ We will put the whole logic into `assets/src/room.ts`. Methods responsible for h
  In our template `setErrorMessage` method is already provided, but take a look at this method - `onConnectionError` callback forces us to 
  provide a method with a given signature (because it is passing some parameters which might be helpful to track the reason of the error).
  #### onJoinSuccess
-
- Firstly let's add a member field responsible for holding the list of peers:
- ```ts
- private peers: Peer[] = [];
- ```
-
- And here is `onJoinSuccess` callback implementation:
+ We will manipulate the list of peers in this method.
+ Here is `onJoinSuccess` callback implementation:
  ```ts
  onJoinSuccess: (peerId, peersInRoom) => {
     this.localStream!.getTracks().forEach((track) =>
@@ -211,9 +218,13 @@ We will put the whole logic into `assets/src/room.ts`. Methods responsible for h
  Once we are ready with `MembraneWebRTC`'s callbacks implementation, let's specify how to behave when the server sends us a message on the channel. 
  We need to implement an event handler:
  ```ts
- this.webrtcChannel.on("mediaEvent", (event) =>
-      this.webrtc.receiveMediaEvent(event.data)
- );
+ constructor(){
+   ...
+   this.webrtcChannel.on("mediaEvent", (event) =>
+         this.webrtc.receiveMediaEvent(event.data)
+   );
+   ...
+ }
  ```
  Once we receive `mediaEvent` from the server (which can be, for instance, a notification that a peer has left), we are simply passing it to the `MembraneWebRTC` object to take care of it.
 
