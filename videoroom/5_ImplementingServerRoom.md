@@ -97,7 +97,7 @@
  end
  ```
  The idea here is very similar to the one in the code snippet described previously - we want to direct the messages sent by SFU Engine's server to the SFU Engine's client.
- The only difference is that not the event is about to be sent to a particular user - that is why instead of ```:broadcast``` atom as the second element of event's tuple we have ```to``` - which is a peer unique id. Since we precisely know to who we should send the message there is nothing else to do than to find the peer channel's process id associated with the given peer id (we are holding the (peer_id -> peer_channel_pid) mapping in the state of the GenServer!) and to send the message there. Once again the state does not need to change.
+ The only difference is that the event is about to be sent to a particular user - that is why instead of ```:broadcast``` atom as the second element of event's tuple we have ```to``` - which is a peer unique id. Since we precisely know to who we should send the message there is nothing else to do than to find the peer channel's process id associated with the given peer id (we are holding the (peer_id -> peer_channel_pid) mapping in the state of the GenServer!) and to send the message there. Once again the state does not need to change.
 
 
  There we go with another message sent by SFU engine:
@@ -156,7 +156,7 @@ How about messages coming from the client, via the `PeerChannel`? We need to pas
  We are almost done! We are monitoring all the peer channels processes. Once they die, we receive ```:DOWN``` message. Let's handle this event!
  ```elixir
  #FILE: lib/videoroom/room.ex
- 
+
  @impl true
  def handle_info({:DOWN, _ref, :process, pid, _reason}, state) do
     {peer_id, _peer_channel_id} =
