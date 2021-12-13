@@ -9,6 +9,8 @@
  You will find the following code there:
 
  ```elixir
+ #FILE: lib/videoroom_web/user_socket.ex
+ 
  defmodule VideoRoomWeb.UserSocket do
     use Phoenix.Socket
 
@@ -27,6 +29,8 @@
  ### How does the server know that we are using the socket?
  That's quite easy - we defined the usage of our socket in `lib/videoroom_web/endpoint.ex`, inside the `VideoRoomWeb.Endpoint` module:
  ```elixir
+ #FILE: lib/videoroom_web/endpoint.ex
+
  defmodule VideoRoomWeb.Endpoint do 
     ...
     socket("/socket", VideoRoomWeb.UserSocket,
@@ -42,6 +46,8 @@
  ### Where is VideoRoomWeb.PeerChannel? 
  It is in `lib/videoroom_web/peer_channel.ex` file! However, for now on, this file is only declaring the `VideoRoomWeb.PeerChannel` module, but does not provide any implementation.
  ```elixir
+ #FILE: lib/videoroom_web/peer_channel.ex
+
  defmodule VideoRoomWeb.PeerChannel do
     use Phoenix.Channel
 
@@ -54,6 +60,8 @@
  
  Let's implement our first callback!
  ```elixir
+ #FILE: lib/videoroom_web/peer_channel.ex
+
  @impl true
  def join("room:" <> room_id, _params, socket) do
     case :global.whereis_name(room_id) do
@@ -97,6 +105,8 @@
  Our channel acts as a communication channel between the Room process on the backend and the client application on the frontend. The responsibility of the channel is to simply forward all `:media_event` messages from the room to the client and all `mediaEvent` messages from the client to the Room process. 
  The first one is done by implementing `handle_info/2` callback as shown below:
  ```elixir
+ #FILE: lib/videoroom_web/peer_channel.ex
+
  @impl true
  def handle_info({:media_event, event}, socket) do
     push(socket, "mediaEvent", %{data: event})
@@ -105,6 +115,8 @@
  ```
  The second one is done by providing following implementation of `handle_in/3`:
  ```elixir
+ #FILE: lib/videoroom_web/peer_channel.ex
+
  @impl true
  def handle_in("mediaEvent", %{"data" => event}, socket) do
     send(socket.assigns.room, {:media_event, socket.assigns.peer_id, event})

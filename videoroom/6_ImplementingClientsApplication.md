@@ -1,6 +1,8 @@
 ## Let's implement the client's endpoint!
 We will put the whole logic into `assets/src/room.ts`. Methods responsible for handling UI are already in `assets/src/room_ui.ts`, let's import them: 
  ```ts
+ //FILE: assets/src/room.ts
+
  import {
     addVideoElement,
     getRoomId,
@@ -14,6 +16,8 @@ We will put the whole logic into `assets/src/room.ts`. Methods responsible for h
  We have basically imported all the methods defined in `room_ui.ts`. For more details on how these methods work and what is their interface please refer to the source file.
  Take a look at our `assets/package.json` file which defines outer dependencies for our project. We have put there the following dependency:
  ```JSON
+ //FILE: assets/package.json
+
  "dependencies": {
    "membrane_rtc_engine": "file:../deps/membrane_rtc_engine/",
    ...
@@ -22,6 +26,8 @@ We will put the whole logic into `assets/src/room.ts`. Methods responsible for h
  which is a client library provided by the RTC engine plugin from the Membrane Framework.
  Let's import some constructs from this library (their name should be self-explanatory and you can read about them in [the official Membrane's RTC engine documentation](https://hexdocs.pm/membrane_rtc_engine/js/index.html) along with some other dependencies which we will need later:
  ```ts
+ //FILE: assets/src/room.ts
+
  import {MEDIA_CONSTRAINTS, LOCAL_PEER_ID} from './consts';
  import {
     MembraneWebRTC,
@@ -35,6 +41,8 @@ We will put the whole logic into `assets/src/room.ts`. Methods responsible for h
 
  Once we are ready with the imports, it might be worth to somehow wrap our room's client logic into a class - so at the very beginning let's simply define `Room` class:
  ```ts
+ //FILE: assets/src/room.ts
+
  export class Room {
 
     private socket;
@@ -73,6 +81,8 @@ We will put the whole logic into `assets/src/room.ts`. Methods responsible for h
  ```
  Let's start with the constructor that will initialize the member fields:
  ```ts
+ //FILE: assets/src/room.ts
+
  constructor(){   
    this.socket = new Socket("/socket");
    this.socket.connect();
@@ -89,6 +99,8 @@ We will put the whole logic into `assets/src/room.ts`. Methods responsible for h
  Then we are connecting to the Phoenix's channel on the topic `room:<room name>`. The room name is fetched from the UI. 
  Following on the constructor implementation:
  ```ts
+ //FILE: assets/src/room.ts
+
  constructor(){  
    ...
    const socketErrorCallbackRef = this.socket.onError(this.leave);
@@ -106,6 +118,8 @@ We will put the whole logic into `assets/src/room.ts`. Methods responsible for h
 
  Now let's get back to the constructor. Let's initialize a MembraneWebRTC object! 
  ```ts
+ //FILE: assets/src/room.ts
+ 
  constructor(){
    ...  
    this.webrtc = new MembraneWebRTC({callbacks: callbacks});
@@ -218,6 +232,8 @@ We will put the whole logic into `assets/src/room.ts`. Methods responsible for h
  Once we are ready with `MembraneWebRTC`'s callbacks implementation, let's specify how to behave when the server sends us a message on the channel. 
  We need to implement an event handler:
  ```ts
+ //FILE: assets/src/room.ts
+
  constructor(){
    ...
    this.webrtcChannel.on("mediaEvent", (event) =>
@@ -232,6 +248,8 @@ We will put the whole logic into `assets/src/room.ts`. Methods responsible for h
 
  Further initialization might take some time. That's why it might be a good idea to define an asynchronous method `join()`:
  ```ts
+ //FILE: assets/src/room.ts
+
  public join = async () => {
     try {
         await this.init();
@@ -255,6 +273,8 @@ We will put the whole logic into `assets/src/room.ts`. Methods responsible for h
  As noticed previously, this method will initialize the user's media stream handlers.
  This is how the implementation of `this.init()` can look like:
  ```ts
+ //FILE: assets/src/room.ts
+
  private init = async () => {
     try {
         this.localStream = await navigator.mediaDevices.getUserMedia(
@@ -286,6 +306,8 @@ We will put the whole logic into `assets/src/room.ts`. Methods responsible for h
 ```this.phoenixChannelPushResult``` is simply wrapping this result:
 
  ```ts
+ //FILE: assets/src/room.ts
+
  private phoenixChannelPushResult = async (push: Push): Promise<any> => {
     return new Promise((resolve, reject) => {
         push
@@ -297,6 +319,8 @@ We will put the whole logic into `assets/src/room.ts`. Methods responsible for h
 
  Oh, we would have almost forgotten! We need to define `this.leave()` method:
  ```ts
+ //FILE: assets/src/room.ts
+
  private leave = () => {
     this.webrtc.leave();
     this.webrtcChannel.leave();
@@ -311,6 +335,8 @@ We will put the whole logic into `assets/src/room.ts`. Methods responsible for h
  Why not create this object! Go to ```assets/src/index.ts``` file (do you remember that this is the file which is loaded in template .eex file for our room's template?)
  Until now this file is probably empty. Let's create ```Room``` instance there!
  ```ts
+ //FILE: assets/src/index.ts
+ 
  import { Room } from "./room";
 
  let room = new Room();

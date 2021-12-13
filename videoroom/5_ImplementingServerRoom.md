@@ -1,8 +1,10 @@
 ## Let's create The Room! ;)
  We are still missing probably the most important part - the heart of our application - the implementation of the room.
  The room should dispatch messages sent from SFU Engine to appropriate peer channels - and at the same time it should direct all the messages sent to it via peer channel to the SFU Engine.
- Let's start by creating /lib/videoroom/room.ex file with a declaration of Videoroom.Room module:
+ Let's start by creating `lib/videoroom/room.ex` file with a declaration of Videoroom.Room module:
  ```elixir
+ #FILE: lib/videoroom/room.ex
+
  defmodule Videoroom.Room do
  @moduledoc false
 
@@ -18,6 +20,8 @@
 
  Let's start by adding wrappers for GenServer's `start` and `start_link` functions:
  ```elixir
+ #FILE: lib/videoroom/room.ex
+
  def start(opts) do
     GenServer.start(__MODULE__, [], opts)
  end
@@ -30,6 +34,8 @@
 
  Then we are providing the implementation of `init/1` callback:
  ```elixir
+ #FILE: lib/videoroom/room.ex
+
  @impl true
  def init(opts) do
     Membrane.Logger.info("Spawning room process: #{inspect(self())}")
@@ -67,6 +73,8 @@
  We won't implement handling all of these messages - only the ones which are crucial to set up the connection between peers, start the process of media streaming and take proper actions when participants disconnect. After finishing the reading of this tutorial you can try to implement handling of other messages (for instance those connected with voice activation detection - ```:vad_notification```). 
  Let's start with handling message sent to us by SFU.
  ```elixir
+ #FILE: lib/videoroom/room.ex
+
  @impl true
  def handle_info({_sfu_engine, {:sfu_media_event, :broadcast, event}}, state) do
    for {_peer_id, pid} <- state.peer_channels, do: send(pid, {:media_event, event})
@@ -77,6 +85,8 @@
 
  Here comes the next method:
  ```elixir
+ #FILE: lib/videoroom/room.ex
+
  @impl true
  def handle_info({_sfu_engine, {:sfu_media_event, to, event}}, state) do
     if state.peer_channels[to] != nil do
@@ -92,6 +102,8 @@
 
  There we go with another message sent by SFU engine:
  ```elixir
+ #FILE: lib/videoroom/room.ex
+
  @impl true
  def handle_info({sfu_engine, {:new_peer, peer_id, _metadata}}, state) do
     # get node the peer with peer_id is running on
@@ -106,6 +118,8 @@
 
  Once we receive ```:peer_left``` message from SFU we simply ignore that fact (we could of course remove the peer_id from the (peer_id->peer_channel_pid) mapping...but do we need to?):
  ```elixir
+ #FILE: lib/videoroom/room.ex
+
  @impl true
  def handle_info({_sfu_engine, {:peer_left, _peer_id}}, state) do
     {:noreply, state}
@@ -115,6 +129,8 @@
 In case SFU Engine wants to communicate with the client during the signaling process, we know how to react - we are simply passing the message to the appropriate `PeerChannel`.
 How about messages coming from the client, via the `PeerChannel`? We need to pass them to the SFU Engine!
  ```elixir
+ #FILE: lib/videoroom/room.ex
+
  @impl true
  def handle_info({:media_event, _from, _event} = msg, state) do
  send(state.sfu_engine, msg)
@@ -124,6 +140,8 @@ How about messages coming from the client, via the `PeerChannel`? We need to pas
  Again - no magic tricks there. We are receiving ```:media_event``` - we are sending it to our SFU engine process. 
  And here come the callback for a ```:add_peer_channel``` message:
  ```elixir
+ #FILE: lib/videoroom/room.ex
+
  @impl true
  def handle_info({:add_peer_channel, peer_channel_pid, peer_id}, state) do
     state = put_in(state, [:peer_channels, peer_id], peer_channel_pid)
@@ -137,6 +155,8 @@ How about messages coming from the client, via the `PeerChannel`? We need to pas
  
  We are almost done! We are monitoring all the peer channels processes. Once they die, we receive ```:DOWN``` message. Let's handle this event!
  ```elixir
+ #FILE: lib/videoroom/room.ex
+ 
  @impl true
  def handle_info({:DOWN, _ref, :process, pid, _reason}, state) do
     {peer_id, _peer_channel_id} =
