@@ -223,7 +223,6 @@ We will put the whole logic into `assets/src/room.ts`. Methods responsible for h
    this.webrtcChannel.on("mediaEvent", (event) =>
          this.webrtc.receiveMediaEvent(event.data)
    );
-   ...
  }
  ```
  Once we receive `mediaEvent` from the server (which can be, for instance, a notification that a peer has left), we are simply passing it to the `MembraneWebRTC` object to take care of it.
@@ -253,11 +252,7 @@ We will put the whole logic into `assets/src/room.ts`. Methods responsible for h
  
 
  Let's provide the implementation of ```this.init()``` used in the `this.join()` method.
- As noticed previously, this method will initialize the user's media stream handlers - so let's add a member field to hold a reference to our localStream (webRTC stream):
- ```ts
- private localStream: MediaStream | undefined;
- ```
-
+ As noticed previously, this method will initialize the user's media stream handlers.
  This is how the implementation of `this.init()` can look like:
  ```ts
  private init = async () => {
