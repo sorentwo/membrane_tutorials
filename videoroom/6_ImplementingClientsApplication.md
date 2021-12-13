@@ -308,7 +308,7 @@ We will put the whole logic into `assets/src/room.ts`. Methods responsible for h
  \- which means we are unregistering all the callbacks. The last thing we need to do is to empty the references list.
 
  Ok, it seems that we have already defined the process of creating and initializing `Room` class's object.
- Why not create this object! Go to ```assets/src/index.js``` file (do you remember that this is the file which is loaded in template .eex file for our room's template?)
+ Why not create this object! Go to ```assets/src/index.ts``` file (do you remember that this is the file which is loaded in template .eex file for our room's template?)
  Until now this file is probably empty. Let's create ```Room``` instance there!
  ```ts
  import { Room } from "./room";

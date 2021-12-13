@@ -27,12 +27,13 @@ In case you find yourself lost along with the tutorial, feel free to check the s
 First, some native dependencies are needed. Here is how you can install them.
 ## Mac OS X
 ```
-brew install srtp libnice clang-format ffmpeg opus
+brew install srtp libnice clang-format ffmpeg
 ```
 ## Ubuntu
 ```
-sudo apt-get install libsrtp2-dev libnice-dev libavcodec-dev libavformat-dev libavutil-dev libopus-dev
+sudo apt-get install libsrtp2-dev libnice-dev libavcodec-dev libavformat-dev libavutil-dev
 ```
+
 Later on we you might need to specify some environmental variables. This process might differ among different systems:
 
 ## Mac OS with Intel
