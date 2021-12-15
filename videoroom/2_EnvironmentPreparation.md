@@ -68,7 +68,7 @@ At the same time, you will be able to run the project from the inside of the con
 
 If you are not using VS Code, you can still take advantage of the virtualization and use the image provided by us - however, you will need to create the shared filesystem volume and bridge the networks on your own. Here is the command which will make this for you:
 ```
-docker run -it -v <path_to_cloned_templates>:/videoroom membraneframeworklabs/docker_membrane
+docker run -p 4000:4000 -it -v <path_to_cloned_templates>:/videoroom membraneframeworklabs/docker_membrane
 ```
 where `<path_to_cloned_templates>` is the **absolute** path to the root directory of the project on your local system.
 After running the command, a container terminal will be attached to your terminal. You will be able to find the project code inside the container in the `/videoroom` directory.
